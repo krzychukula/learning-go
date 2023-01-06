@@ -44,3 +44,7 @@ go1.15.6 env GOROOT // -> some path
 rm -rf $(go1.15.6 env GOROOT)
 go $(go env GOPATH)/bin/go1.15.6
 
+You can also use:
+
+* https://magefile.org/
+* https://taskfile.dev/
