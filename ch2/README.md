@@ -79,3 +79,27 @@ Const needs to be a literals or expressions based on literals.
 No const at runtime!
 
 ## Typed and Untyped Constants
+
+Mostly leave constants untyped for convenience. 
+
+## Unused Variables
+
+Compiles won't work if you have a variable that is never read inside of a function. 
+* Won't complain about package-level variables.
+* Won't complain about unused assignments.
+* Unused constants are also fine.
+
+## Naming Variables and Constants
+
+variablesUseCamelCase
+
+Go variable names are shorter depending on the scope of usage.
+Within function it is a single letter.
+
+Using `f` to represent float -> woot
+
+Using shorter variables to keep the code shorter is maybe a valid argument, but not in Golang.
+This language is built around not having a short code. 
+
+At least package variables are usually named properly.
+
