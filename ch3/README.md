@@ -120,4 +120,126 @@ var rs []rune = []rune(s)
 
 Use `string` or `unicode/utf8` if you need to do something with the strings.
 
-## Maps
+## Maps (are hash maps in Go)
+
+var nilMap map[string]int
+
+You can read (will return 0 value), but if you try to write it will cause `panic`
+
+totalWins := map[string]int{} // empty map
+
+teams := map[string][]string {
+    "Orcas": []string{"Fred", "Ralph"},
+    "Lions": []string{"Bob", "Ze"},
+}
+
+// to create map with size
+
+ages := make(map[int][]string, 10)
+
+### The comma ok Idiom
+
+```go
+	m := map[string]int{
+		"hello": 5,
+		"world": 0,
+	}
+	v, ok := m["hello"]
+	fmt.Println(v, ok)
+	//5 true
+
+	v, ok = m["world"]
+	fmt.Println(v, ok)
+	// 0 true
+
+	v, ok = m["goodbye"]
+	fmt.Println(v, ok)
+	// 0 false
+```
+
+delete(m, "hello")
+
+delete will ignore nil map or missing value
+
+### Using Maps and Sets
+
+intSet := map[int]bool{}
+
+for less memory but worse API you can use:
+
+intSet := map[int]struct{}{} // struct{} takes 0 memory, bool takes 1 byte
+
+## Structs
+
+```go
+type person struct {
+    name string
+    age int
+    pet string
+}
+```
+var emptyStruct person
+// each field has it's zero value
+
+emptyStruct := person{}
+
+julia := person{
+    "Julia",
+    40,
+    "cat", // need to specify every field in order
+}
+
+beth := person{
+    age: 30,
+    name: "Beth",
+}
+
+### Anonymous Structs
+
+pet := struct {
+    name string
+    kind string
+}{
+    name: "Fido",
+    kind: "dog",
+}
+
+### Comparing and Converting Structs
+
+struct firstPerson struct {
+    name string
+    age int
+}
+struct secondPerson struct {
+    name string
+    age int
+}
+
+// contersion won't work for:
+struct differentOrderPerson struct {
+    age int
+    name string
+}
+struct differentFieldPerson struct {
+    firstName string
+    age int
+}
+struct additionalFieldPerson struct {
+    name string
+    age int
+    surname string
+}
+
+// Anonymous + example
+
+f := firstPerson{
+    name: "Bob",
+    age: 50,
+}
+var g struct {
+    name string
+    age int
+}
+
+g = f
+fmt.Printl(f == g)
