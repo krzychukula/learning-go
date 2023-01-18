@@ -71,3 +71,53 @@ This will give you 10 `0` values at the biginning of the slice!!!
 
 ### Slicing slices
 
+x := []int{1, 2, 3, 4}
+// y := x[startIndexInclusive|0:endIndexExclusive|endOfSlice]
+y := x[:2] // [1, 2]
+d := x[1:3] // [2, 3]
+
+#### Slices share storage sometimes
+
+Beware of memory leaks!
+Beware of changing underlying data when two slices share data!
+
+##### append makes it even more broken
+
+x := []int{1, 2, 3, 4}
+y := x[:2] // [1, 2]
+fmt.Println(cap(x), cap(y))// 4 4
+y = append(y, 30)
+fmt.Println("x:", x) // [1, 2, 30, 4] !!!!!!!
+fmt.Println("y:", y) // [1, 2, 30]
+
+##### Full slice expression
+// y := x[startIndexInclusive|0:endIndexExclusive|endOfSlice:lastPositionInOriginalSliceCapacityAvailable|fullCapacity]
+y := x[:2:2]
+z := x[2:4:4]
+
+** THIS API is broken and should NOT be used **
+
+### You can convert array to slice by slicing it
+
+slice := array[:]
+
+### copy
+
+numberOfElementsCopied = copy(destination, source)
+
+num = copy(x[:3], x[1:])
+
+
+## Strings and Runes and Bytes
+
+Just don't use slicing on strings.
+1. Memory leaks
+2. It won't know anything about UTF-8 and will break any characters greater than 1 byte
+
+var s string = "Hello, ę"
+var bs []byte = []byte(s)
+var rs []rune = []rune(s)
+
+Use `string` or `unicode/utf8` if you need to do something with the strings.
+
+## Maps
