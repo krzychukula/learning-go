@@ -147,9 +147,23 @@ Value is a copy. range makes a copy of the value from your slice/map/string.
 ### Lebeling Your for Statements
 
 
+```go
+outer:
+    for i := 0; i < 10; i++ {
+        for i, r := range "abcąbć" {
+            if r == "b" {
+                continue outer
+            }
+            fmt.Println(i, r, string(r))
+        }
+    }
 ### Choosing the Right for Statement
 
+Prefer `for range` loop
+
 ## switch
+
+
 
 ## Blank Switches
 
