@@ -163,11 +163,37 @@ Prefer `for range` loop
 
 ## switch
 
+expression switch statements vs type swich statements?
+here only "expression switch statements"
+
 
 
 ## Blank Switches
 
+```go
+for _, word := range words {
+    switch wordLen := len(word); {
+    case wordLen < 5:
+        fmt.Println(word, "is a short word")
+    case wordLen > 10:
+        fmt.Println(word, "is a long word")
+    default:
+        fmt.Println(word, "is exactly right len:", wordLen)
+    }
+}
+/*
+    a is a short word
+    cow is a short word
+    smile is exactly right len: 5
+    gopher is exactly right len: 6
+    octopus is exactly right len: 7
+    anthropologist is a long word
+*/
+```
+
 ## Choosing between if and switch
+
+
 
 ## goto-Yes, goto
 
