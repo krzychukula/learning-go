@@ -193,7 +193,9 @@ for _, word := range words {
 
 ## Choosing between if and switch
 
-
+if - for unrelated cases
+switch - for related cases (e.g.: checking the same variable)
 
 ## goto-Yes, goto
 
+yyy, just don't use it
