@@ -172,3 +172,9 @@ see [[closer.go]]
 
 
 ## Go Is Call by Value
+
+primitives and structs -> copy is passed to a function
+
+slice and map -> copy of a pointer
+1. You can change them to the limit of their capacity
+
