@@ -121,10 +121,31 @@ func divAndRemainder(numerator int, denominator int) (result int, reminder int, 
 
 ## Functions Are Values
 
+calculator.go
 
+### Function Type Declarations
+
+```go
+var opMap = map[string]func(int, int) int{}
+
+// with named
+
+type opFuncType func(int, int) int
+
+var opMap = map[string]opFuncType {}
+
+```
+
+### Anonymous Functions
+
+[[anon.go]]
 
 ## Closures
 
+Like in JS.
+
 ## defer
+
+
 
 ## Go Is Call by Value
