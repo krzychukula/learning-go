@@ -146,6 +146,29 @@ Like in JS.
 
 ## defer
 
+[[cat.go]]
+
+go build cat.go     
+./cat cat.go
+// [./cat cat.go]
+// contents of the file
+
+```go
+func example () (err error) {
+    defer func() {
+        if err == nil {
+            err = tx.Commit()
+        }
+        if err != nil {
+            tx.Rollback()
+        }
+    }()
+}
+```
+
+Much nicer patter is for functiont to return a closer!
+
+see [[closer.go]]
 
 
 ## Go Is Call by Value
