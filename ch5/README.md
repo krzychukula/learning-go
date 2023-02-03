@@ -28,7 +28,7 @@ func main() {
 }
 ```
 
-### Variadic Intup Parameters and Slices
+### Variadic Input Parameters and Slices
 
 ```go
 func addTo(base int, vals ...int) []int {
