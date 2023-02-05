@@ -505,4 +505,94 @@ type LinkedList struct {
 
 ## Type Assertions and Type Switches
 
+If type assertion fails then it causes `panic`.
+
+```go
+type MyInt int
+
+func main() {
+    var i interface{}
+    var mine MyInt = 20
+    i = mine
+    i2 := i.(MyInt)
+    fmt.Println(i2 + 1)
+
+    // this won't work
+    i2 := i.(string)
+    fmt.Println(i2)
+}
+```
+
+Type assertion needs to match the type of the underlying value.
+
+You can avoid crashing by the comma ok Idiom
+
+```go
+i2, ok := i.(int)
+if !ok {
+    return fmt.Errorf("unexpected type for %v", i)
+}
+fmt.Println(i2 + 1)
+```
+
+Type assertions only happen at runtime.
+Type asserstion is NOT a type conversion.
+Type conversions are guarded by the compiler.
+
+Type Swich
+
+```go
+func doThings(i interface{}) {
+    switch j := i.(type) {
+        case nil:
+            // i is nil, type of j is interface{}
+        case int:
+            // j is of type int
+        case MyInt:
+            // j is of type MyInt
+        case io.Reader:
+            // j is of type io.MyReader
+        case string:
+            //
+        case bool, rune:
+            // i is either a bool or rune, so j is of type interface{}
+        default:
+            // no idea what i is, so j is of type interface{}
+    }
+}
+```
+usually it is written as: 
+` switch i := i.(type) {` and shadowing the original variable inside of the switch
+
+## Use Type Assertions and Type Switches Sparingly
+
+Good use - check if some related interface is implemented in the passed interface.
+Can be used for optimisations.
+
+```go
+// copyBuffer is the actual implementation of Copy and CopyBuffer.
+// if buf is nil, one is allocated.
+func copyBuffer(dst Writer, src Reader, buf []byte) (written int64, err error) {
+    // If the reader has a WriteTo method, use it to copy
+    // Avoids all allocation and a copy.
+    if wt, ok := src.(WriteTo); ok {
+        return wt.WriteTo(dst)
+    }
+    // similarly, if the writer has a ReadFrom method, use it to do the copy
+    if rt, ok := dst.(ReaderFrom); ok {
+        return rt.ReadFrom(src)
+    }
+    // now implementation of copy
+
+}
+```
+
+Optional interfaces technique will break when you use decorator pattern.
+
+Use `errors.Is` and `errors.As` to test and access the wrapped error.
+
+This is weird. It's kind of like Duck Typing, but I also find it weird.
+
+## Function Types Are a Bridge to Interfaces
+
 
