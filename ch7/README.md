@@ -347,7 +347,162 @@ func main() {
 
 ## A Quick Lesson on Interfaces
 
+The only abstract type in Go are it's implicit interfaces.
 
+```go
+type Stringer interface {
+    String() string
+}
+```
 
+> The methods defined by an interface are called the **method set** of the interface.
+
+Usually named with "er" endings.
+
+## Interfaces Are Type-Safe Duck Typing
+
+```go
+type  interface {
+    Process(data string) string
+}
+
+type Logic struct {}
+
+func (lp Logic) Process(data string) string {
+    // logic
+}
+
+type Client struct {
+    L LogicProcessor
+}
+
+func (c Client) Program() {
+    // get data from somewhere
+    c.L.Process(data)
+}
+
+main() {
+    c := Client{
+        L: Logic{},
+    }
+    c.Program()
+}
+```
+
+Decorator pattern
+
+```go
+func process(r io.Reader) error
+
+// used as
+r, err := os.Open(fileName)
+if err != nil {
+    return err
+}
+defer r.Close()
+return process(r)
+
+// OR if gzip
+r, err := os.Open(fileName)
+if err != nil {
+    return err
+}
+defer r.Close()
+
+gz, err := gzip.NewReader(r)
+if err != nil {
+    return err
+}
+defer gz.Close()
+
+return process(r)
+```
+
+Always use the smallest interface that will work.
+
+## Embedding and Interfaces
+
+Embedding types.
+```go
+type Reader interface {
+    Read(p []byte) (n int, err error)
+}
+
+type Closer interface {
+    Close() error
+}
+
+type ReadCloser intefrace {
+    Reader
+    Closer
+}
+```
+
+## Accept Interfaces, Return Structs
+
+> Errors are an exciption to this rule.
+
+> When invoking a function with parameters of interface types, a heap allocation occurs for each of the interface parameters.
+
+## Interfaces and `nil`
+
+In Go runtime, interfaces are implemented as a pair of pointers:
+1. pointer to the underlying type
+2. pointer to the underlying value
+
+```go
+vas s *string
+s == nil // true
+
+var i interface{}
+i == nil // true
+
+i = s // value pointer is set
+i == nil // FALSE!!!!!
+```
+
+If an interface is `nil` then invoking any methods on it triggers a `panic`.
+If an interface is non-nil then you can invoke methods on it. 
+This is regardless if the value is `nil` or not. 
+
+## The Empty Interface Says Nothing
+
+`interface{}` - means `any`
+
+```go
+var i interface{}
+i = 20
+i = "hello"
+i = struct {
+    FirstName string
+    LastName string
+} {"Fred", "Fredson"}
+```
+
+> An empty interface states that variable can store any value whose type implements zero or more methods.
+
+```go
+// one set of braces for interface{}
+// the other to instantiate an instance of the map
+data := map[string]interface{}{}
+contents, err := ioutil.ReadFile("testdata/sample.json")
+if err != nil {
+    return err
+}
+defer contents.Close()
+json.Unmarshal(contents, &data)
+// contents are now in the data map
+```
+
+Before generics you had to use `interface{}` for user definder data structures.
+
+```go
+type LinkedList struct {
+    Value interface{}
+    Next *LinkedList
+}
+```
+
+## Type Assertions and Type Switches
 
 
