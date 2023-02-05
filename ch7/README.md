@@ -240,8 +240,114 @@ const (
     Field3 // 4
     Field4 // 8
 )
+```
 
 ## Use Embedding for Composition
+
+```go
+type Empleoyee struct {
+    Name string
+    ID string
+}
+
+func (e Employee) Description() string {
+    return fmt.Sprintf("%s (%s)", e.Name, e.ID)
+}
+
+type Manager struct {
+    // NO name assigned to type Employee here
+    // embedded field
+    Employee
+    Reports []Employee
+}
+
+func (m Manager) FindNewEmployees() []Employee {
+    // some logic
+}
+
+m := Manager{
+    Employee: Employee{
+        Name: "Bob Bobson",
+        ID: "123"
+    }
+    Reports: []Employee{}
+}
+fmt.Println(m.ID)//123
+fmt.Println(m.Description())// Bob Bobson (123)
+
+```
+
+> You can embed any type within a struct, not just another struct.
+> This promotes the methods on the embedded type to the containing struct.
+
+Outer struct can **shadow** methods and fields from the inner type.
+
+```go
+type Inner struct {
+    X int
+}
+
+type Outer struct {
+    Inner
+    X int
+}
+
+o := Outer {
+    Inner: Inner{
+        X: 10
+    },
+    X: 200
+}
+
+o.X // 200
+o.Inner.X // 10
+```
+
+## Embedding is Not Inheritance
+
+Methods of the embedded type won't call methods of the containing type (even if they share the same name).
+
+```go
+
+type Inner struct {
+    A int
+}
+
+func (i Inner) IntPrinter(val int) string {
+    return fmt.Sprintf("Inner: %d", val)
+}
+
+func (i Inner) Double() string {
+    return i.IntPrinter(i.A * 2)
+}
+
+type Outer struct {
+    Inner
+    S string
+}
+
+func (o Outer) IntPrinter(val int) string {
+    return fmt.Sprintf("Outer: %d", val)
+}
+
+func main() {
+    o := Outer{
+        Inner: Inner{
+            A: 10,
+        },
+        S: "Hello",
+    }
+
+    fmt.Println(o.Double()) // Inner: 20
+}
+```
+
+> The methods on an embedded field do count toward the *method set* of the containg struct. 
+> This means they can make the containing struct implement na interface.
+
+## A Quick Lesson on Interfaces
+
+
 
 
 
