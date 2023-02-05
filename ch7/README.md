@@ -595,4 +595,24 @@ This is weird. It's kind of like Duck Typing, but I also find it weird.
 
 ## Function Types Are a Bridge to Interfaces
 
+```go
+type Handler interface {
+    ServeHTTP(http.ResponseWriter, *http.Request)
+}
+
+type HandlerFunc func(http.ResponseWriter, *http.Request)
+
+func (f HandlerFunc) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+    f(w, r)
+}
+```
+
+I'm not sure I follow here. So we make function implement an interface? 
+How do I use this in practice?
+
+
+If your function takes a function as a parameter.
+Then you can set it's type to a function type OR set up an interface for it.
+
+## Implicit Interfaces Make Dependency Injection Easier
 
