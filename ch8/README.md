@@ -105,7 +105,114 @@ Weird things here. So how do you create those sentinel errors anyway?
 
 ## Errors Are Values
 
+```go
+type Status int
 
+const (
+    InvalidLogin Status = iota + 1
+    NotFound
+)
 
+type StatusErr struct {
+    Status Status
+    Message string
+}
 
+func (se StatusErr) Error() string() {
+    return se.Message
+}
+
+func LoginAndGetData(uid, pwd, file string) ([]byte, error) {
+    err := login(uid, pwd)
+    if err != nil {
+        return nil, StatusErr{
+            Status: InvalidLogin,
+            Message: fmt.Sprintf("invalid credentials for user %s", uid)
+        }
+    }
+    data, err := getData(file)
+    if err != nil {
+        return nil, StatusErr{
+            Status: NotFound,
+            Message: fmt.Sprintf("file %s not found", file)
+        }
+    }
+    return data, nil
+}
+```
+
+always return `error` type
+Do not return uninitialised variable as custom error
+
+```go
+func GenerateError(flag bool) error {
+    // don't do this
+    var genErr StatusErr
+    if flag {
+        genErr = StatusErr{
+            Status: NotFound
+        }
+    }
+    return genErr
+}
+
+func main() {
+    err := GenerateError(true)
+    fmt.Println(err != nil) // true
+    
+    err = GenerateError(false)
+    fmt.Println(err != nil) // true!!!!!!
+}
+```
+
+err is never `nil` because interface values have to fields:
+* interface (is not nil here)
+* value (is nil)
+
+How to fix it?
+
+1. Return `nil` explicitly.
+
+```go
+func GenerateError(flag bool) error {
+    if flag {
+        return StatusErr{
+            Status: NotFound
+        }
+    }
+    return nil
+}
+
+func main() {
+    err := GenerateError(true)
+    fmt.Println(err != nil) // true
+    
+    err = GenerateError(false)
+    fmt.Println(err != nil) // should be fixed
+}
+```
+
+2. Or make sure that you use `error` type!
+
+```go
+func GenerateError(flag bool) error {
+    var genErr error // not StatusErr
+    if flag {
+        genErr = StatusErr{
+            Status: NotFound
+        }
+    }
+    return genErr
+}
+
+func main() {
+    err := GenerateError(true)
+    fmt.Println(err != nil) // true
+    
+    err = GenerateError(false)
+    fmt.Println(err != nil) // should be fixed
+}
+```
+
+## Wrapping Errors
 
