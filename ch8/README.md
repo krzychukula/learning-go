@@ -67,7 +67,43 @@ fmt.Errorf("%d isn't an even number", i)
 // this allows formatting in error messages. 
 ```
 
+## Sentinel Errors
 
+Dave Cheney
+
+* package variable with a name starting with `Err`
+* exception `io.EOF`
+* they should be readonly (unless you make a mistake)
+
+`archive/zip`
+
+```go
+package main
+
+import (
+	"archive/zip"
+	"bytes"
+	"fmt"
+)
+
+func main() {
+	data := []byte("This is not a zip file")
+	notAZipFile := bytes.NewReader(data)
+	_, err := zip.NewReader(notAZipFile, int64(len(data)))
+	if err == zip.ErrFormat {
+		fmt.Println("Told you so")
+	}
+}
+```
+
+`crypto/rsa` has:
+* `rsa.ErrMessageTooLong`
+
+Another common: `context.Canceled`
+
+Weird things here. So how do you create those sentinel errors anyway?
+
+## Errors Are Values
 
 
 
