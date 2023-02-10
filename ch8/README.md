@@ -385,4 +385,11 @@ func main() {
 
 If you create a library then catch `panic` and convert it to an `error`.
 
+## Getting a Stack Trace from an Error
+
+Use `%+v` for verbose output (stack trace)
+
+But you need to use a third-party library
+
+Use `trimpath` when building code locally!
 
