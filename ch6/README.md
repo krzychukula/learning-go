@@ -119,7 +119,7 @@ For 10 megabytes of data - passing it into a function takes 1 milisecond.
 
 Until around 1 megabyte it's faster to return value than a pointer!
 
-## Ther Zero Value Versus No Value
+## The Zero Value Versus No Value
 
 Do not use pointer `nil` values as an api of exposing `undefined`
 
