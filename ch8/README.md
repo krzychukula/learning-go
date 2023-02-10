@@ -59,6 +59,13 @@ So much BS about why it's so great. Not sure if I should laugh or cry.
 
 ## Use Strings for Simple Errors
 
+```go
+err := errors.New("some error")
+fmt.Println(err) // this will call Error() method be default - and print the passed string
+
+fmt.Errorf("%d isn't an even number", i)
+// this allows formatting in error messages. 
+```
 
 
 
