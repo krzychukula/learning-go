@@ -327,3 +327,25 @@ if errors.As(err, &coder) {
 `errors.Is` -> looking for specific **instance** or **value**
 `errors.As` -> looking for specific **type**
 
+## Wrapping Errors with defer
+
+```go
+func DoSomeThings(val1 int, val2 string) (string, err error) {
+    defer func() {
+        if err != nil {
+            err = fmt.Errorf("in DoSomeThings: %w", err)
+        }
+    }()
+
+    val3, err := doThing1(val1)
+    if err != nil {
+        return "", err
+    }
+    val4, err := doThing2(val2)
+    if err != nil {
+        return "", err
+    }
+    returun doThing3(val3, val4)
+}
+```
+
