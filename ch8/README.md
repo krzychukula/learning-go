@@ -349,3 +349,40 @@ func DoSomeThings(val1 int, val2 string) (string, err error) {
 }
 ```
 
+## panic and recover
+
+* panic stops everything
+* but calls all `defer` functions
+
+```go
+func doPanic(msg string) {
+    panic(msg)
+}
+
+func main() {
+    doPanic(os.Args[0])
+}
+```
+
+recover
+
+```go
+func div60(i int) {
+    defer func() {
+        if v := recover(); v != nil {
+            fmt.Printl(v)
+        }
+    }()
+    fmt.Printl(60 / i)
+}
+
+func main() {
+    for _, val := range []int{1, 2, 0, 6} {
+        div60(val)
+    }
+}
+```
+
+If you create a library then catch `panic` and convert it to an `error`.
+
+
