@@ -250,3 +250,80 @@ if err != nil {
 }
 ```
 
+## Is and As
+
+Checking for sentinel in wrapped errors -> `errors.Is`
+
+sentinel - `errors.In`.
+
+```go
+func fileChecker(name string) error {
+    f, err := os.Open(name)
+    if err != nil {
+        return fmt.Errorf("in fileChecker: %w", err)
+    }
+    f.Close()
+    return nil
+}
+
+func main () {
+    err := fileChecker("not here.txt")
+    if err != nil {
+        if errors.Is(err, os.ErrNotExists) {
+            fmt.Println("That file doesn't exist")
+        }
+    }
+}
+```
+
+`Is` is using `==` for comparisons.
+
+To support it in your type:
+
+```go
+type MyErr struct {
+    Codes []int
+}
+func (me MyErr) Error() string {
+    return fmt.Sprintf("codes: %v", me.Codes)
+}
+
+func (me MyErr) Is(target error) bool {
+    if me2, ok := target.(MyErr); ok {
+        return reflect.DeepEqual(me, me2)
+    }
+    return false
+}
+```
+
+### As
+
+`errors.As` - matching TYPE
+
+But, WHY??????????? 
+What this is for???????????
+
+```go
+err := AFunctionThatReturnsAnError()
+var myErr MyErr
+if errors.As(err, &myErr) {
+    fmt.Println(myErr.Code)
+}
+```
+
+It can also be an interface
+
+```go 
+err := AFunctionThatReturnsAnError()
+var coder interface {
+    Code() int
+}
+if errors.As(err, &coder) {
+    fmt.Println(coder.Code())
+}
+```
+
+
+`errors.Is` -> looking for specific **instance** or **value**
+`errors.As` -> looking for specific **type**
+
