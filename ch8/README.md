@@ -216,3 +216,37 @@ func main() {
 
 ## Wrapping Errors
 
+`fmt.Errorf` with `%w` will wrap an error. 
+
+convention:
+* make `%w` last thing in the error
+* make error last parameter
+
+`errors.Unwrap` can unwrap errors.
+
+For custom errors:
+
+```go
+type StatusErr struct {
+    Status Status
+    Message string
+    Err error
+}
+func (se StatusErr) Error() string {
+    return se.Message
+}
+func (se StatusErr) Unwrap() error {
+    return se.Err
+}
+```
+
+If you just want a message from the error without wrapping it:
+* Use `%v`
+
+```go
+err := internalFunction()
+if err != nil {
+    return fmt.Errorf("internal failure: %v", err)
+}
+```
+
