@@ -286,7 +286,24 @@ func main() {
 }
 ```
 
-`go build` will download packages and put them in `go.mod` file
+`go build` will download packages and put them in `go.mod` file.
+
+*******
+**But when I tried it I got an error**
+```
+ch9 % go build
+main.go:8:5: no required module provides package github.com/learning-go-book/formatter; to add it:
+        go get github.com/learning-go-book/formatter
+main.go:9:5: no required module provides package github.com/shopspring/decimal; to add it:
+        go get github.com/shopspring/decimal
+```
+****
+
+Something to try:
+`go get ./...`
+
+It works! :) 
+
 
 ```go
 // go.mod
