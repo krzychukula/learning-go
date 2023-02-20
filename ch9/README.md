@@ -184,7 +184,71 @@ godoc - convention (btw. conventions are usually not explicit as what Go is supp
 
 Document at least all exported identifiers
 
-### The internal Package
+### The `internal` Package
+
+`internal` package exported identifiers are accessible to:
+* direct parent package of `internal`
+* sibling packages of `internal`
+
+### The `init` Function: Avoid if Possible
+
+Don't use it. 
+But it's still there for:
+* database drivers
+* image formats
+
+If you use `init` to set up anything package level - them make it **immutable**
+
+### Circular Dependencies
+
+**No** circular dependencies - directly or indirectly
+
+If you get a compiler error then deal with it.
+Join packages if you can, or extract the shared thing.
+
+### Gracefully Renaming and Reorganizing Your API
+
+Try to not remove any public API (exported identifiers)
+
+For types use `alias`
+
+```go
+type Foo struct {
+    x int
+    S string
+}
+
+func (f Foo) Hell() string {
+    return "hello"
+}
+
+func (f Foo) goodbye() string {
+    return "goodbye"
+}
+
+// alias
+
+type Bar = Foo
+
+// You can use Bar the same way as Foo!
+
+func MakeBar() Bar {
+    bar := Bar {
+        x: 20,
+        S: "Hello"
+    }
+    var f Foo = bar
+    fmt.Println(f.Hello())
+    return bar
+}
+```
+
+You can alias even from another package - but you won't have access to unexported methods and fields.
+- You can still create your own versions and call the other package under the hood
+
+Can't have alternatme names:
+* package-level variable
+* field in a struct (exported name?)
 
 
 
