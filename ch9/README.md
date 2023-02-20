@@ -357,3 +357,18 @@ To remove old versions form `go.mod` and `go.sum` files use:
 `go mod tidy`
 
 
+### Vendoring
+
+* just copy the exact thing
+
+Enable -> `go mod vendor`
+Will create `/vendor` directory
+
+After that you need to run `go mod vendor` after **any** change to dependencies.
+
+-> So vendoring is like a flag you set for a module.
+
+### pkg.go.dev
+
+-> documentation of open-source packages
+
