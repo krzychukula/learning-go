@@ -372,3 +372,35 @@ After that you need to run `go mod vendor` after **any** change to dependencies.
 
 -> documentation of open-source packages
 
+
+## Publishing Your Module
+
+- [ ] Just publish on Github
+- [ ] Add a `LICENSE` file
+  - permissive: BSD/MIT/Apache are most common
+  - GPL is not practical as Go builds from source
+
+## Versioning Your Module
+
+- [ ] Just apply a Git **tag** that follows SemVer.
+
+Breaking changes:
+* create directory `v2` and copy, code, README, and LICENSE there
+* Create branch for each version:
+  * `v1` - and have v2 in the `main` branch
+  * Or create `v2` branch for the new version.
+
+- [ ] then fix all the paths to have `/v2` at the end... (or `/v1`)
+
+Using the branch seems like a better idea
+
+## Module Proxy Servers
+
+Go uses a proxy server run by Google.
+
+Google maintains a `sum` database as well.
+
+### Private Repositories
+
+`GOPRIVATE=*.example.com,company.com/repo`
+
