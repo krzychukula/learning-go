@@ -324,4 +324,36 @@ $ ./money 99.99 7.25
 
 `go list -m -versions github.com/learning-go-book/simpletax`
 
+Go uses SemVer
+
+### Minimal Version Selection
+
+Minimum version that satisfies all requirements.
+
+If new version is not forward compatible, then you need to ask library authors to fix it. 
+
+### Updating to Compatible Versions
+
+`-u=patch`:
+
+`go get -u=patch github.com/learning-go-book/simpletax`
+
+Update to the newest `-u`
+
+`go get -u github.com/learning-go-book/simpletax`
+
+### Updating to Incompatible Versions
+
+SemVer - breaking change:
+* The major version of the module must be incremented
+* For all major versions besides 0 and 1, the path to the module must end with `vN` where N is the major version.
+
+Path changes because incompatible versions are DIFFERENT packages
+
+`"github.com/learning-go-book/simpletax/v2"`
+
+To remove old versions form `go.mod` and `go.sum` files use: 
+
+`go mod tidy`
+
 
