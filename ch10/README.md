@@ -15,3 +15,5 @@ Amdahl's Law - cost of synchronization!!! Bottlenecks again
 There is a cost of concurrency -> This is why it's mostly used for I/O!
 Write a sequential program first.
 
+## Goroutines
+
