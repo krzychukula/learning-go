@@ -597,3 +597,67 @@ Try implement it in another language and see how hard it is.
 This is super hard already!
 Also. Using something like promises in JS would make this a lot simpler. The only complication is cancellation.
 
+## When to Use Mutexes Instead of Channels
+
+```go
+
+type BottleneckScoreboardManager struct {
+    bottleneck sync.RWMutex
+    scoreboard map[strin]int
+}
+
+func New() *BottleneckScoreboardManager {
+    return &BottleneckScoreboardManager{
+        scoreboard: map[string]int{}
+    }
+}
+
+func (bsm *BottleneckScoreboardManager) Update(name string, val int) {
+    bsm.bottleneck.Lock()
+    defer bsm.bottleneck.Unlock()
+    bsm.scoreboard[name] = val
+}
+
+func (bsm *BottleneckScoreboardManager) Read(name string) (int, bool) {
+    bsm.bottleneck.RLock()
+    defer bsm.bottleneck.RUnlock()
+    val, ok = bsm.scoreboard[name]
+    return val, ok
+}
+```
+
+> Concurrency in Go by Katherine Cox-Buday
+> * If you are coordinating goroutines or tracking a value as it is transformed by a series of goroutines, use **channels**.
+> * If you are sharing access to a field in a struct, use **mutexes**.
+> * If you discover a critical performance issue when using channels, and you cannot find any other way to fix the issue, modify your code to use a **mutex**.
+
+You can send funcions over a channel. Nice!
+
+Locks in Go are NOT reentrant:
+If you call `Lock()` twice then it will deadlock!
+
+Do not copy:
+* sync.WaitGroup
+* sync.Once
+* mutex
+
+`sync.Map`
+* shared map: keys inserted once and read many times
+* goroutines do not access each others keys
+
+## Atomics—You Probably Don't Need These
+
+`sync/atomic`
+
+Not for normal people to use modern CPUs atomic variable operations:
+* swap
+* load
+* store
+* compare
+* swap (CAS)
+This is for singler register values. 
+
+## Learn More
+
+Concurrency in Go -> Katherine Cox-Buday
+
