@@ -201,3 +201,399 @@ So don't use it in *for-select* as it will be invoked all the time.
 ## Concurrency Practices and Patterns
 
 
+### Keep Your APIs Concurrency-Free
+
+Do not expose **channels** or **Mutexes** (bottlenecks) in API. (don't export them)
+
+### Goroutines, for Loops, and Varying Variables
+
+Passing index or value from for loop to goroutine will lead to the same problem as in JS.
+
+1. Shadow the varible
+
+```go
+for _, v := range a {
+    v := v
+    go func() {
+        ch <- v * 2
+    }()
+}
+```
+
+2. Pass the value as parameter to the goroutine
+
+```go
+for _, v := range a {
+    go func(val int) {
+        ch <- val * 2
+    }(v)
+}
+```
+
+### Always Clean Up Your Goroutines
+
+**goroutine leak** - runtime will give it time to run even if it does nothing.
+
+-> But how do you clean them up???
+
+### The Done Channel Pattern
+
+```go
+func searchData(s string, searchers []func(string) []string) []string {
+    done := make(chan struct{})
+    result := make(chan []string)
+    for _, searcher := range searchers {
+        go func(searcher func(string) []string) {
+            select {
+            case result <- searcher(s):
+            case <-done:
+            }
+        }(searcher)
+    }
+    r := <-result
+    close(done)
+    return r
+}
+```
+-> after one search finishes close(done) will close all other goroutines.
+
+### Using a Cancel Funcsion to Terminate a Goroutine
+
+```go
+func countTo(max int) (<-chan int, func()) {
+    done := make(chan struct{})
+    ch := make(chan int)
+    cancel := func() {
+        close(done)
+    }
+
+    go func(searcher func(string) []string) {
+        for i := 0; i < max; i++ {
+            select {
+            case <-done:
+            case ch<-i:
+            }
+        }
+        close(ch)
+    }()
+    return ch, cancel
+}
+
+func main() {
+    ch, cancel := countTo(10)
+    for i := range ch {
+        if i > 5 {
+            break
+        }
+        fmt.Println(i)
+    }
+    cancel() // this prevents goroutine leak
+}
+```
+
+### When to Use Buffered and Unbuffered Channels
+
+Buffered
+- if you know how many goroutines you launched
+- you want to limit the number of goroutines you will launch
+- want to limit the amount of work that can queue up
+
+Buffered channel - gathering data from known number of goroutines
+
+```go
+func processChannel(ch chan int) []int {
+    const conc = 10
+    results := make(chan int, conc)
+    for i := 0; i < conc; i++ {
+        go func() {
+            v := <- ch
+            results <- process(v)
+        }()
+    }
+    var out []int
+    for i := 0; i < conc; i++ {
+        out = append(out, <-results)
+    }
+    return out
+}
+```
+
+### Backpressure
+
+> systems perform better overall when their comonents limit the amount of work they are willing to perform.
+
+```go
+type PressureGauge struct {
+    ch chan struct{}
+}
+
+func New(limit int) *PressureGauge {
+    ch := make(chan struct{}, limit)
+    for i := 0; i < limit; i++ {
+        ch <- struct{} // sends to channel initial number of events
+    }
+    return &PressureGauge{
+        ch: ch
+    }
+}
+
+func (pg *PressureGauge) Process(f func()) error {
+    select {
+    case <-pg.ch: // receives from channel
+        f()
+        pg.ch <- struct{}{} // sends to channel after it's done
+        return nil
+    default:
+        return errors.New("no more capacity")
+    }
+}
+
+func doThingThatShouldBeLimited() string {
+    time.Sleep(2 * time.Second)
+    return "done"
+}
+
+func main() {
+    pg := New(10)
+    http.HandleFunc("/request", func(w http.ResponseWriter, r *http.Request) {
+        err := pg.Process(func() {
+            w.Write([]byte(doThingThatShouldBeLimited()))
+        })
+        if err != nil {
+            w.WriteHeader(http.StatusTooManyRequests)
+            w.Write([]byte("Too many requests"))
+        }
+    })
+    http.ListenAndServe(":8080", nil)
+}
+```
+
+### Turning Off a case in select
+
+Set closed channel to `nil` to not waste time on it in `select`
+
+```go
+for {
+    select {
+    case <-done:
+        return
+    case v, ok := <-in:
+        if !ok {
+            in = nil // this case will never match again
+            continue
+        }
+        fmt.Println(v)
+    case v, ok := <-in2:
+        if !ok {
+            in2 = nil // this case will never match again
+            continue
+        }
+        fmt.Println(v)
+    }
+}
+```
+
+### How to Time Out Code
+
+-> 100 Go Mistakes #76: time.After and memory leaks
+* time.After creates a channel that won't be garbage collected until it finishes.
+* So don't use it in a loop when you would create a lot of those channels
+Better use `context.WithTimeout`
+
+```go
+func timeLimit() (int, err) {
+    var result int
+    var err error
+    done := make(chan struct{})
+    go func() {
+        result, err = doSomething()
+        close(done)
+    }()
+    select {
+    case <- done:
+        return result, err
+    case <- time.After(2 * time.Second):
+        return 0, errors.New("work timed out")
+    }
+}
+```
+
+
+### Using WaitGroups
+
+Waiting for one goroutine -> you can use done channel
+Waiting for more `WaitGroup`
+
+```go
+func main() {
+    var wg sync.WaitGroup
+    wg.Add(3)
+    go func() {
+        defer wg.Done()
+        doThing()
+    }()
+    go func() {
+        defer wg.Done()
+        doThing()
+    }()
+    go func() {
+        defer wg.Done()
+        doThing()
+    }()
+    wg.Wait()
+}
+```
+
+```go
+func processAndGather(in <-chan int, processor func(int) int, num int) []int {
+    out := make(chan int, num)
+    var wg sync.WaitGroup
+    wg.Add(num)
+    for i:=0; i<num; i++ {
+        go func() {
+            defer wg.Done()
+            for v := range in {
+                out <- processor(v)
+            }
+        }()
+    }
+    go func() {
+        wg.Wait()
+        close(out)
+    }()
+    var result []int
+    for v := range out {
+        result = append(result, v)
+    }
+    return result
+}
+```
+
+### Running Code Exactly Once
+
+`sync.Once` `once.Do()`
+
+```go
+type SlowComplicatedParser interface {
+    Parse(string) string
+}
+
+var parser SlowComplicatedParser
+var once sync.Once
+
+func Parse(dataToParse string) string {
+    once.Do(func() {
+        parser = initParser()
+    })
+    return parser.Parse(dataToParse)
+}
+
+func initParser() SlowComplicatedParser {
+    // setup and loading that is slow
+}
+```
+
+### Putting Our Concurrent Tools Together
+
+```go
+func GatherAndProcess(ctx context.Context, data Input) (COut, error) {
+    ctx, cancel := context.WithTimeout(ctx, 50*time.Millisecond)
+    defer cancel()
+
+    p := processor{
+        outA: make(chan AOut, 1),
+        outB: make(chan BOut, 1),
+        inC: make(chan CIn, 1),
+        outC: make(chan COut, 1),
+        errs: make(chan error, 2),
+    }
+    p.launch(ctx, data)
+    inputC, err := p.waitForAB(ctx)
+    if err != nil {
+        return COut{}, err
+    }
+    p.inC <- inputC
+    out, err := p.waitForC(ctx)
+    return out, err
+}
+
+type processor struct {
+    outA chan AOut
+    outB chan BOut
+    outC chan COut
+    inC chan CIn
+    errs chan error
+}
+
+func (p *processor) launch(ctx context.Context, data Input) {
+    go func() {
+        aOut, err := getResultA(ctx, data.A)
+        if err != nil {
+            p.errs <- err
+            return
+        }
+        p.outA <- aOut
+    }()
+    go func() {
+        bOut, err := getResultB(ctx, data.B)
+        if err != nil {
+            p.errs <- err
+            return
+        }
+        p.outB <- bOut
+    }()
+    go func() {
+        select {
+        case <-ctx.Done():
+            return
+        case inputC := <-p.inC:
+            cOut, err := getResult(ctx, inputC)
+            if err != nil {
+                p.errs <- err
+                return
+            }
+            p.outC <- cOut
+        }
+    }()
+    // -> Don't we need to wait for those goroutines somewhere outside? 
+}
+
+func (p *processor) waitForAB(ctx context.Context) (CIn, error) {
+    var intupC CIn
+    count := 0
+    for count < 2 {
+        select {
+        case a := <-p.outA:
+            inputC.A = a
+            count++
+        case b := <-p.outB:
+            inputC.B = b
+            count++
+        case err := <-p.errs:
+            return CIn{}, err
+        case <-ctx.Done():
+            return CIn{}, ctx.Err()
+        }
+    }
+    return inputC, nil
+}
+
+// This code is so bad...
+
+func (p *processor) waitForAB(ctx context.Context) (COut, error) {
+    select {
+    case outC := <-p.outC:
+        return outC, nil
+    case err := <-p.errs:
+        return COut{}, err
+    case <-ctx.Done():
+        return COut{}, ctx.Err()
+    }
+}
+
+```
+
+Try implement it in another language and see how hard it is. 
+This is super hard already!
+Also. Using something like promises in JS would make this a lot simpler. The only complication is cancellation.
+
