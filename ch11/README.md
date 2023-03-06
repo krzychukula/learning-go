@@ -189,6 +189,264 @@ Marshal and Unmarshall use Reflection
 
 ### JSON, Readers, and Writers
 
+`encoding/json`
+
+```go
+type Person struct {
+    Name string `json:"name"`
+    Age int `json:"age"`
+}
+
+toFile := Person {
+    Name: "Fred",
+    Age: 40,
+}
+
+// streaming(?) reading and writing
+
+tmpFile, err := ioutil.TempFile(os.TempDir(), "sample-")
+if err != nil {
+    panic(err)
+}
+defer os.Remove(tmpFile.Name())
+
+err = json.NewEncoder(tmpFile).Encode(toFile)
+if err != nil {
+    panic(err)
+}
+err = tmpFile.Close()
+if err != nil {
+    panic(err)
+}
+
+// now read
+
+tmpFile2, err := os.Open(tmpFile.Name())
+if err != nil {
+    panic(err)
+}
+
+var fromFile Person
+err = json.NewDecoder(tmpFile2).Decode(&fromFile)
+if err != nil {
+    panic(err)
+}
+err = tmpFile2.Close()
+if err != nil {
+    panic(err)
+}
+fmt.Printf("%+v\n", fromFile)
+
+```
+
+### Encoding and Decoding JSON Streams
+
+-> This is weird. It's not really a valid JSON in this example. 
+
+```go
+dec := json.NewDecoder(strings.NewReader(data))
+for dec.More() {
+    err := dec.Decode(&t)
+    if err != nil {
+        panic(err)
+    }
+    // process t here
+}
+```
+
+
+```go
+var b bytes.Buffer
+enc := json.NewEncoder(&b)
+for _, input := range allInputs {
+    t := process(input)
+    err = enc.Encode(t)
+    if err != nil {
+        panic(err)
+    }
+}
+out := b.String()
+```
+
+### Custom JSON Parsing
+
+```go
+type RFC822ZTime struct {
+    time.Time
+}
+
+func (rc RFC822ZTime) MarshallJSON() ([]byte, error) {
+    out := rt.Time.Format(time.RFC822Z)
+    return []byte(`"` + out + `"`), nil
+}
+
+func (rt *RFC822ZTime) UnmarshallJSON(b []byte) error {
+    if string(b) == "null" {
+        return nil
+    }
+    t, err := time.Parse(`"` + time.RFC822Z + `"`, string(b))
+    if err != nil {
+        return err
+    }
+    *rt = RFC822ZTime{t}
+    return nil
+}
+```
+
+## `net/http`
+
+### The Client
+
+```go
+client := &http.Client{
+    Timeout: 30 * time.Second
+}
+
+req, err := http.NewRequestWithcontext(context.Background(), http.MethodGet, "https://jsonplaceholder.typicode.com/todos/1", nil)
+if err != nil {
+    panic(err)
+}
+
+req.Header.Add("X-My-Client", "Learning Go")
+res, err := client.Do(req)
+if err != nil {
+    panic(err)
+}
+
+defer res.Body.Close() // important!
+
+if res.StatusCode != http.StatusOK {
+    panic(fmt.Sprintf("unexpected status: got %v", res.Status))
+}
+
+fmt.Println(res.Header.Get("Content-Type"))
+
+var data struct {
+    UserID int `json:"userID"`
+    ID     int `json:"id"`
+    Title  string `json:"title"`
+    Completed bool `json:"completed"`
+}
+
+err = json.NewDecoder(res.Body).Decode(&data)
+if err != nil {
+    panic(err)
+}
+fmt.Printf("%+v\n", data)
+```
+
+Always instantiate a Client - because you need to explicitly set the **timeout**.
+
+## The Server
+
+* http.Server
+* http.Handler
+
+```go
+type Handler interface {
+    ServeHTTP(http.ResponseWriter, *http.Request)
+}
+
+type ResponseWriter interface {
+    Header() http.Header
+    Write([]byte) (int, error)
+    WriteHeader(statusCode int)
+}
+```
+
+Always use this order:
+1. Header()
+2. WriteHeader()
+3. Write()
+
+```go
+type HelloHandler struct{}
+
+func (hh HelloHandler) ServerHTTP(w http.ResponseWriter, r *http.Request) {
+    w.Write([]byte("Hello!\n"))
+}
+
+s := http.Server{
+    Addr: ":8080",
+    ReadTimeout: 30 * time.Second,
+    WriteTimeout: 90 * time.Second,
+    IdleTimeout: 120 * time.Second,
+    Handler: HelloHandler{},
+}
+err := s.ListenAndServe()
+if err != nil {
+    if err != http.ErrServerClosed {
+        panic(err)
+    }
+}
+```
+
+reqest router -> `*http.ServeMux` `http.NewServeMux`
+
+```go
+mux.HandleFunc("/hello", func(w http.ResponseWriter, r *http.Request) {
+    w.Write([]byte("Hello!\n"))
+})
+```
+
+You can nest them:
+
+```go
+person := http.NewServeMux()
+person.HandleFunc("/greet", func(w http.ResponseWriter, r *http.Request) {
+    w.Write([]byte("greetings!\n"))
+})
+
+dog := http.NewServeMux()
+dog.HandleFunc("/greet", func(w http.ResponseWriter, r *http.Request) {
+    w.Write([]byte("good putty!\n"))
+})
+
+mux := http.NewServeMux()
+mux.Handle("/person", http.StripPrefix("/person", person))
+mux.Handle("/dog", http.StripPrefix("/dog", dog))
+```
+
+### Middleware
+
+```go
+func RequestTimer(h http.Handler) http.Handler {
+    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        start := time.Now()
+        h.ServeHTTP(w, r)
+        end := time.Now()
+        log.Printf("request time for %s: %v", r.URL.Path, end.Sub(start))
+    })
+}
+
+var securityMsg = []byte("You didn't give the secret password\n")
+
+func TerribleSecurityProvider(password string) func(http.Handler) http.Handler {
+    return func (h http.Handler) http.Handler {
+        return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+            if r.Header.Get("X-Secret-Password") != password {
+                w.WriteHeader(http.StatusUnauthorized)
+                w.Write(securityMsg)
+                return
+            }
+
+            h.ServeHTTP(w, r)
+        })
+    }
+}
+
+terribleSecurity := TerribleSecurityProvider("GOPHER")
+
+mux.Handle("/hello", terribleSecurity(RequestTimer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+    w.Write([]byte("Hello\n"))
+}))))
+
+alice - for chaining of middleware
+
+
+
+
+```
 
 
 
