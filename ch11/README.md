@@ -139,6 +139,58 @@ func NopCloser(r io.Reader) io.ReadCloser {
 
 ## time
 
+* `time.Duration` represented by `int64`
+* `time.Time`
+
+time.Duration (smallest is 1 nanosecond)
+
+when comparing times use `Equals` method instead of `==` because of time-zones. 
+
+`t.Format("January 2, 2006 at 3:04:05PM MST")`
+
+## encoding/json
+
+marshalling: from Go data types -> JSON (or other encoding)
+unmarshalling: JSON -> Go
+
+### Use Struct Tags to Add Metadata
+
+```go
+type Item struct {
+    ID string `json:"id"`
+    Name string `json:"name"`
+}
+```
+
+`json:-` to skip a field
+`json:"name",omitempty`
+
+I can agree that annotation in Java are overused. 
+
+### Unmarshalling and Marshalling
+
+```go
+var i Item
+
+err := json.Unmarshall([]byte(data), &i)
+if err != nil {
+    return err
+}
+```
+One of the reasons is Go lack of generics
+
++ that it gives you control over memory allocation (NOT CONVINCED!) 
+
+`out, err := json.Marshall(i)`
+
+Why is there no passing of slice of bytes here? (because it's much nicer API)
+
+Marshal and Unmarshall use Reflection
+
+### JSON, Readers, and Writers
+
+
+
 
 
 
