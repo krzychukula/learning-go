@@ -87,5 +87,60 @@ if diff := cmp.Diff(expected, result); diff != "" {
 
 ## Benchmarks
 
+```go
+var blackhole int
 
+func BenchmarkFileLen1(b *testing.B) {
+    // every benchmark needs to run b.N times
+    for i := 0; i < b.N; i++ {
+        result, err := FileLen("testdata/data.txt", 1)
+        if err != nil {
+            b.Fatal(err)
+        }
+        blackhole = result
+    }
+}
+```
+
+`go test -bench`
+
+## Stubs in Go
+
+You can embed an interface in a struct
+
+```go
+type Entities interface {
+    GetUser(id string) (User, error)
+    GetPets(userID string) ([]Pet, error)
+    GetChildren(userID string) ([]Person, error)
+    GetFriends(userID string) ([]Person, error)
+    SaveUser(user User) error
+}
+
+type Logic struct {
+    Entities Entities
+}
+```
+
+> In short, a stub returns a canned value for a given input, whereas a mock validates that a set of calls happen in the expected order with the expected inputs.
+
+## httptest
+
+`httptest.NewServer`
+
+## Integration Tests and Build Tags
+
+```go
+// +build integration
+```
+
+`go test -tags integration -v ./..`
+
+or `-short` flag
+
+## Finding Concurrency Problems with the Race Checker
+
+`go test -race`
+
+Binary with `-race` runs 10X slower.
 
