@@ -132,3 +132,35 @@ func callBoth(ctx context.Context, errVal string, slowURL string, fastURL string
 
 ## Handling Context Cancellation in Your Own Code
 
+1. `ctx.Done()` channel of `struct{}`
+
+
+Calling `Done()` on context that is not cancellable will return `nil`!
+So it will block forever. 
+-> This seems like an easy way to shoot yourself in a foot.
+
+```go
+func longRunningThingManager(ctx context.Context, data string) (string, error) {
+    type wrapper struct {
+        result string
+        err string
+    }
+
+    ch := make(chan wrapper, 1)
+
+    go func() {
+        // long running thing
+        result, err := longRunningThing(ctx, data)
+        ch <- wrapper{result, err}
+    }()
+
+    select {
+    case data := <-ch:
+        return data.result, data.err
+    case <-ctx.Done():
+        return "", ctx.Err()
+    }
+}
+```
+
+## Values
