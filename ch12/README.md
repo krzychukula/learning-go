@@ -164,3 +164,23 @@ func longRunningThingManager(ctx context.Context, data string) (string, error) {
 ```
 
 ## Values
+
+-> Passing values through context may be a bad idea
+
+private key:
+
+```go
+type userKey int
+const key userKey = 1
+
+
+func ContextWithUser(ctx context.Context, user string) context.Context {
+    return context.WithValue(ctx, key, user)
+}
+
+func UserFromContext(ctx context.Context) (string, bool) {
+    user, ok := ctx.Value(key).(string)
+    return user, ok
+}
+```
+
