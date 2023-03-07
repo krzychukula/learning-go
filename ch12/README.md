@@ -125,3 +125,10 @@ func callBoth(ctx context.Context, errVal string, slowURL string, fastURL string
 
 ## Timers
 
+* context.WithTimeout
+* context.WithDeadline
+
+`time, ok := ctx.Deadline()` time when it will cancel if set (ok?)
+
+## Handling Context Cancellation in Your Own Code
+
